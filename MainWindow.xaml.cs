@@ -19,6 +19,7 @@ namespace M3UPlayerWPF
         {
             InitializeComponent();
             this.MediaElementPlayer.MediaFailed += new EventHandler<ExceptionRoutedEventArgs>(MediaFailed);
+            this.Loaded += new RoutedEventHandler(Window_Loaded);
         }
 
         void MediaFailed(object sender, ExceptionRoutedEventArgs e)
@@ -37,10 +38,10 @@ namespace M3UPlayerWPF
             }
         }
 
-        private async void Window_Loaded(object sender, RoutedEventArgs e)
+        private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             string fileName = "webtv_usr.xml";
-            playlist = await ParseXMLFile(fileName);
+            playlist = ParseXMLFile(fileName);
 
             if (playlist.Count > 0)
             {
@@ -51,31 +52,37 @@ namespace M3UPlayerWPF
             }
             else
             {
-                MessageBox.Show("Не удалось загрузить список каналов из файла m3u");
+                MessageBox.Show("Не удалось загрузить список каналов из файла xml");
             }
         }
 
-        private async Task<List<Channel>> ParseXMLFile(string fileName)
+        private List<Channel> ParseXMLFile(string fileName)
         {
             List<Channel> channels = new List<Channel>();
+
+            if (!File.Exists(fileName))
+            {
+                MessageBox.Show("Файл не найден: " + fileName);
+                return channels;
+            }
 
             try
             {
                 XDocument xdoc = XDocument.Load(fileName);
-                foreach (XElement channelElement in xdoc.Element("channels").Elements("channel"))
+                foreach (XElement channelElement in xdoc.Element("webtvs").Elements("webtv"))
                 {
                     Channel channel = new Channel();
-                    XElement nameElement = channelElement.Element("name");
-                    XElement urlElement = channelElement.Element("url");
+                    XAttribute nameAttribute = channelElement.Attribute("title");
+                    XAttribute urlAttribute = channelElement.Attribute("url");
 
-                    if (nameElement != null)
+                    if (nameAttribute != null)
                     {
-                        channel.Name = nameElement.Value.Trim();
+                        channel.Name = nameAttribute.Value.Trim();
                     }
 
-                    if (urlElement != null)
+                    if (urlAttribute != null)
                     {
-                        channel.Url = urlElement.Value.Trim();
+                        channel.Url = urlAttribute.Value.Trim();
                     }
 
                     channels.Add(channel);
@@ -84,6 +91,11 @@ namespace M3UPlayerWPF
             catch (Exception ex)
             {
                 MessageBox.Show("Ошибка при чтении файла xml: " + ex.Message);
+            }
+
+            if (channels.Count == 0)
+            {
+                MessageBox.Show("Нет каналов в этом файле или ошибка чтения файла");
             }
 
             return channels;
