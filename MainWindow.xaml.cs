@@ -14,12 +14,29 @@ namespace M3UPlayerWPF
     {
         private List<Channel> playlist;
 
-
         public MainWindow()
         {
             InitializeComponent();
+            this.MediaElementPlayer.LoadedBehavior = MediaState.Manual;
+            this.MediaElementPlayer.UnloadedBehavior = MediaState.Manual;
             this.MediaElementPlayer.MediaFailed += new EventHandler<ExceptionRoutedEventArgs>(MediaFailed);
             this.Loaded += new RoutedEventHandler(Window_Loaded);
+        }
+
+        private void WindowSizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            // Если окно свернуто, установите определенные размеры
+            if (this.WindowState == WindowState.Minimized)
+            {
+                MediaElementPlayer.Width = 480;
+                MediaElementPlayer.Height = 270;
+            }
+            // Если окно в нормальном или развернутом состоянии, позвольте MediaElement заполнять все доступное пространство
+            else
+            {
+                MediaElementPlayer.Width = double.NaN; //This will make the MediaElement use all the available width
+                MediaElementPlayer.Height = double.NaN;//This will make the MediaElement use all the available height
+            }
         }
 
         void MediaFailed(object sender, ExceptionRoutedEventArgs e)
@@ -54,6 +71,11 @@ namespace M3UPlayerWPF
             {
                 MessageBox.Show("Не удалось загрузить список каналов из файла xml");
             }
+        }
+
+        private void btnMinimize_Click(object sender, RoutedEventArgs e)
+        {
+            WindowState = WindowState.Minimized;
         }
 
         private List<Channel> ParseXMLFile(string fileName)
